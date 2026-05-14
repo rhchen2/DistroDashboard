@@ -1,0 +1,16 @@
+node_modules
+.pnpm-store
+dist
+.next
+.turbo
+.cache
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+config.local.json
+.vercel
+supabase/.temp
+.vscode
+.idea
