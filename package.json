@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20.0.0", "pnpm": ">=9.0.0" },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
@@ -14,6 +17,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "eslint": "^9.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.4.0"
