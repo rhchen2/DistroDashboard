@@ -39,13 +39,14 @@ serve(async (req) => {
   try {
     if (parsed.data.kind === "orders") {
       const result = await handleOrders(supabase, parsed.data);
-      await supabase.from("sync_runs").update({
+      const { error: runErr } = await supabase.from("sync_runs").update({
         status: result.errors.length === 0 ? "success" : "partial",
         orders_seen: parsed.data.rows.length,
         orders_changed: result.changed,
         error_message: result.errors.length ? JSON.stringify(result.errors) : null,
         finished_at: new Date().toISOString(),
       }).eq("id", parsed.data.syncRunId);
+      if (runErr) console.error("sync_runs update failed:", runErr.message);
 
       await fireRevalidate();
       return new Response(JSON.stringify(result), {
