@@ -808,9 +808,9 @@ git push origin main
 
 ## Phase 2 — Supabase Project + Schema Migrations
 
-**Goal:** Local Supabase running; full 7-table schema applied; `distros` seeded with the GTS row; `pnpm db:reset` reliably rebuilds the schema.
+**Goal:** Cloud Supabase project linked; full 7-table schema applied via `pnpm db:push`; `distros` seeded with the GTS row.
 
-**Prereq:** Install Supabase CLI (`brew install supabase/tap/supabase` or scoop/winget on Windows; verify with `supabase --version`).
+**Prereq:** Supabase CLI installed and linked to cloud project (`supabase link --project-ref <ref>`). ✅ Done — project ref `iazxjydnsohleirgxekb`.
 
 ### Task 2.1 — Initialize Supabase locally
 
@@ -899,7 +899,7 @@ create index orders_distro_id_idx on orders(distro_id);
 
 - [ ] **Step 2: Apply via `supabase db reset`**
 
-Run: `pnpm db:reset`
+Run: `pnpm db:push`
 Expected: prints "Applying migration 20260513000001_init_distros_orders.sql", no errors.
 
 - [ ] **Step 3: Verify in Studio**
@@ -973,7 +973,7 @@ create trigger order_items_history_trg
 
 - [ ] **Step 2: Apply**
 
-Run: `pnpm db:reset`
+Run: `pnpm db:push`
 Expected: clean apply.
 
 - [ ] **Step 3: Manually verify trigger works**
@@ -1044,7 +1044,7 @@ create index shipments_shipped_at_idx on shipments(shipped_at desc);
 
 - [ ] **Step 2: Apply**
 
-Run: `pnpm db:reset`
+Run: `pnpm db:push`
 Expected: clean apply.
 
 - [ ] **Step 3: Commit**
@@ -1084,7 +1084,7 @@ create index sync_runs_status_idx on sync_runs(status);
 
 - [ ] **Step 2: Apply**
 
-Run: `pnpm db:reset`
+Run: `pnpm db:push`
 Expected: clean apply.
 
 - [ ] **Step 3: Commit**
@@ -1116,7 +1116,7 @@ on conflict (slug) do nothing;
 
 - [ ] **Step 2: Apply**
 
-Run: `pnpm db:reset`
+Run: `pnpm db:push`
 Expected: clean apply.
 
 - [ ] **Step 3: Verify**
@@ -1137,7 +1137,7 @@ git commit -m "feat(db): seed distros with GTS row"
 git push origin main
 ```
 
-**Milestone reached:** local Supabase has full schema + GTS seed. `pnpm db:reset` is a one-command rebuild.
+**Milestone reached:** local Supabase has full schema + GTS seed. `pnpm db:push` is a one-command rebuild.
 
 ---
 
@@ -1438,7 +1438,7 @@ git commit -m "feat(ingest): status headline recomputation with unit tests"
 
 - [ ] **Step 1: Write integration test**
 
-This test requires `supabase start` and `pnpm db:reset` to have run.
+This test requires `supabase start` and `pnpm db:push` to have run.
 
 ```ts
 // supabase/functions/ingest/tests/orders.test.ts
@@ -5544,7 +5544,7 @@ supabase/          # migrations + ingest edge function
 1. Install pnpm (`npm i -g pnpm`), Node 20, Supabase CLI, Playwright deps.
 2. `pnpm install`
 3. `pnpm --filter @distro/scraper exec playwright install chromium`
-4. Local Supabase: `pnpm db:start && pnpm db:reset`
+4. Local Supabase: `pnpm db:start && pnpm db:push`
 5. Copy env templates:
    - `cp apps/scraper/config.local.json.example apps/scraper/config.local.json` and fill GTS creds + ingest URL + token
    - `cp apps/scraper/.env.local.example apps/scraper/.env.local` and fill Supabase URL + service role key
@@ -5596,7 +5596,7 @@ git push origin main
 - [ ] **Step 1: Reset the local environment to a clean slate**
 
 ```bash
-pnpm db:reset
+pnpm db:push
 ```
 
 - [ ] **Step 2: Run a real end-to-end sync** against local Supabase with the real GTS scraper.
