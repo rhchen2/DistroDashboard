@@ -5375,17 +5375,23 @@ jobs:
         env:
           SUPABASE_DB_PASSWORD: postgres
 
+      # The implementation must obtain the service role key from `supabase status`
+      # output at runtime (e.g., parse it into $GITHUB_ENV in a shell step).
+      # Do NOT hardcode any key-shaped string in this file — even a placeholder
+      # JWT trips secret scanners and looks bad in source.
+      - name: Export local service role key
+        run: |
+          KEY=$(supabase status --output env | grep '^SERVICE_ROLE_KEY=' | cut -d= -f2-)
+          echo "SUPABASE_SERVICE_ROLE_KEY=$KEY" >> $GITHUB_ENV
+
       - run: pnpm typecheck
       - run: pnpm test
         env:
           SUPABASE_URL: http://127.0.0.1:54321
-          # service role key is deterministic for local Supabase; reads from `supabase status`
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.LOCAL_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.placeholder' }}
 
       - run: pnpm --filter @distro/web build
         env:
           SUPABASE_URL: http://127.0.0.1:54321
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.LOCAL_SUPABASE_SERVICE_ROLE_KEY || 'placeholder' }}
           REVALIDATE_TOKEN: ci-token
 
   deploy-functions:
