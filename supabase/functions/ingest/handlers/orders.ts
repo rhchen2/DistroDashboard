@@ -120,13 +120,13 @@ async function upsertOneOrder(
 
   // Payments: upsert by (order_id, kind, expected_date)
   for (const p of snap.payments) {
-    const { data: existing } = await c.from("order_payments").select("id")
+    const { data: existingPay } = await c.from("order_payments").select("id")
       .eq("order_id", order.id)
       .eq("kind", p.kind)
       .eq("expected_date", p.expectedDate)
       .limit(1);
 
-    const matched = (existing ?? [])[0];
+    const matched = (existingPay ?? [])[0];
 
     if (matched) {
       const { error: pUpdErr } = await c.from("order_payments").update({
@@ -151,7 +151,8 @@ async function upsertOneOrder(
   }
 
   // Shipments: replace wholesale
-  await c.from("shipments").delete().eq("order_id", order.id);
+  const { error: shipDelErr } = await c.from("shipments").delete().eq("order_id", order.id);
+  if (shipDelErr) throw new Error(`shipments delete failed: ${shipDelErr.message}`);
   if (snap.shipments.length > 0) {
     const shipRows = snap.shipments.map((s) => ({
       order_id: order.id,
