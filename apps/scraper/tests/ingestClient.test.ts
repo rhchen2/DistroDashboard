@@ -16,7 +16,9 @@ const fakeSnapshot: OrderSnapshot = {
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn());
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("postOrders", () => {
   it("POSTs payload with x-scraper-token header", async () => {
