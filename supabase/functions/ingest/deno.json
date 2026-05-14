@@ -1,7 +1,7 @@
 {
   "unstable": ["sloppy-imports"],
   "imports": {
-    "@distro/contracts": "../../../packages/contracts/src/index.ts",
+    "@distro/contracts": "../../../packages/contracts/src/index.deno.ts",
     "zod": "https://deno.land/x/zod@v3.23.8/mod.ts"
   }
 }
