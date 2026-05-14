@@ -1,0 +1,10 @@
+{
+  "ingestUrl": "https://iazxjydnsohleirgxekb.supabase.co/functions/v1/ingest",
+  "scraperToken": "",
+  "distros": {
+    "gts": {
+      "username": "",
+      "password": ""
+    }
+  }
+}
