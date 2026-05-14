@@ -414,12 +414,13 @@ git commit -m "chore: add shared TS, ESLint, Prettier config"
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    "outDir": "dist"
   },
   "include": ["src/**/*", "tests/**/*"]
 }
 ```
+
+> Don't add `rootDir: "src"` — it conflicts with including `tests/**/*` (TS6059 "must be under rootDir"). Without `rootDir`, the build emits per-source-file output relative to the common parent of `include`, which is fine because vitest runs tests directly and we don't ship the test files.
 
 - [ ] **Step 3: Create `packages/contracts/vitest.config.ts`**
 
@@ -2063,12 +2064,13 @@ git push origin main
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
     "types": ["node"]
   },
   "include": ["src/**/*", "tests/**/*"]
 }
 ```
+
+> Same pattern as `packages/contracts/tsconfig.json` — don't set `rootDir` because `include` covers files outside any single root.
 
 - [ ] **Step 3: Create `apps/scraper/vitest.config.ts`**
 
