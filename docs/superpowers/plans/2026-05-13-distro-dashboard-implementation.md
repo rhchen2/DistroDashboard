@@ -1575,7 +1575,7 @@ Deno.test("handleOrders triggers price-history when unit_cost_cents changes", as
 
 - [ ] **Step 2: Run test → fail**
 
-Run: `deno test --allow-all --env=supabase/.env.local supabase/functions/ingest/tests/orders.test.ts`
+Run: `deno test --allow-all --env-file=supabase/.env.local --config supabase/functions/ingest/deno.json supabase/functions/ingest/tests/orders.test.ts`
 Expected: FAIL — `handleOrders` not defined.
 
 - [ ] **Step 3: Implement `handlers/orders.ts`**
@@ -1722,7 +1722,7 @@ async function upsertOneOrder(
 
 - [ ] **Step 4: Run tests → pass**
 
-Run: `deno test --allow-all --env=supabase/.env.local supabase/functions/ingest/tests/orders.test.ts`
+Run: `deno test --allow-all --env-file=supabase/.env.local --config supabase/functions/ingest/deno.json supabase/functions/ingest/tests/orders.test.ts`
 Expected: 4 passed.
 
 - [ ] **Step 5: Commit**
