@@ -34,3 +34,28 @@ Deno.test({ name: "handleFailure updates sync_run with error + uploads screensho
   // cleanup
   await c.from("sync_runs").delete().eq("id", run!.id);
 }});
+
+Deno.test({ name: "handleFailure works without a screenshot", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  const c = createClient(SUPA_URL, SVC, { auth: { persistSession: false } });
+  const { data: distro } = await c.from("distros").select("id").eq("slug", "gts").single();
+
+  const { data: run } = await c.from("sync_runs").insert({
+    distro_id: distro!.id, status: "running",
+  }).select("id").single();
+
+  await handleFailure(c, {
+    kind: "failure",
+    distroSlug: "gts",
+    syncRunId: run!.id,
+    error: "Timeout",
+    screenshotBase64: null,
+  });
+
+  const { data: updated } = await c.from("sync_runs").select("*").eq("id", run!.id).single();
+  assertEquals(updated!.status, "error");
+  assertEquals(updated!.error_message, "Timeout");
+  assertEquals(updated!.screenshot_url, null);
+  assertExists(updated!.finished_at);
+
+  await c.from("sync_runs").delete().eq("id", run!.id);
+}});

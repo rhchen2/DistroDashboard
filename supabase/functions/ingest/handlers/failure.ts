@@ -22,7 +22,8 @@ export async function handleFailure(
     });
     if (upErr) throw new Error(`screenshot upload failed: ${upErr.message}`);
 
-    const { data: signed } = await c.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
+    const { data: signed, error: signErr } = await c.storage.from(BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
+    if (signErr) throw new Error(`screenshot sign failed: ${signErr.message}`);
     screenshotUrl = signed?.signedUrl ?? null;
   }
 

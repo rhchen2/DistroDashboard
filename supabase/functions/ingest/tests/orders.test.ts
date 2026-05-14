@@ -126,3 +126,44 @@ Deno.test({ name: "handleOrders triggers price-history when unit_cost_cents chan
 
   await cleanup();
 }});
+
+Deno.test({ name: "handleOrders removes item no longer in snapshot", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  await cleanup();
+  const c = client();
+  // First call: 1 item
+  await handleOrders(c, samplePayload());
+
+  // Second call: no items
+  const noItems = samplePayload();
+  noItems.rows[0].items = [];
+  await handleOrders(c, noItems);
+
+  const { data: orderRow } = await c.from("orders").select("id")
+    .eq("distro_order_id", "PO-TEST-1").single();
+  const { data: items } = await c.from("order_items").select("*")
+    .eq("order_id", orderRow!.id);
+  assertEquals(items?.length, 0);
+
+  await cleanup();
+}});
+
+Deno.test({ name: "handleOrders handles null-SKU items idempotently", sanitizeOps: false, sanitizeResources: false, fn: async () => {
+  await cleanup();
+  const c = client();
+
+  const nullSkuPayload = samplePayload();
+  nullSkuPayload.rows[0].items = [{
+    sku: null, productName: "Mystery Box", qty: 1, unitCostCents: 3000, releaseDate: null,
+  }];
+
+  await handleOrders(c, nullSkuPayload);
+  await handleOrders(c, nullSkuPayload); // second call — must not duplicate
+
+  const { data: orderRow } = await c.from("orders").select("id")
+    .eq("distro_order_id", "PO-TEST-1").single();
+  const { data: items } = await c.from("order_items").select("*")
+    .eq("order_id", orderRow!.id);
+  assertEquals(items?.length, 1); // exactly one, not two
+
+  await cleanup();
+}});

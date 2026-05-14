@@ -64,50 +64,57 @@ async function upsertOneOrder(
   ).select("id").single();
   if (oErr || !order) throw new Error(`orders upsert failed: ${oErr?.message}`);
 
-  // Items: update in place (to trigger price-history DB trigger), insert new, delete removed
-  // The DB trigger record_order_item_history fires on UPDATE when cost/qty changes.
-  if (snap.items.length > 0 || (await c.from("order_items").select("id").eq("order_id", order.id)).data?.length) {
-    const { data: existingItems } = await c.from("order_items").select("id,sku,unit_cost_cents,qty")
-      .eq("order_id", order.id);
-    const existingBySku = new Map<string, { id: string; unit_cost_cents: number; qty: number }>();
-    for (const row of existingItems ?? []) {
-      if (row.sku != null) existingBySku.set(row.sku, { id: row.id, unit_cost_cents: row.unit_cost_cents, qty: row.qty });
+  // Items: update in-place to fire price-history trigger on cost/qty changes.
+  const { data: existingItems } = await c.from("order_items")
+    .select("id,sku,unit_cost_cents,qty")
+    .eq("order_id", order.id);
+  const existing = existingItems ?? [];
+
+  // Match incoming items to existing items: by SKU first, then by position for null-SKU.
+  const existingById = new Map(existing.map((r) => [r.id, r]));
+  const usedIds = new Set<string>();
+
+  for (let i = 0; i < snap.items.length; i++) {
+    const it = snap.items[i];
+    // Find best match: same non-null SKU, or unmatched row at same index for null-SKU items.
+    let matchId: string | undefined;
+    if (it.sku != null) {
+      matchId = existing.find((r) => r.sku === it.sku && !usedIds.has(r.id))?.id;
+    } else {
+      // null-SKU: match by position among unmatched null-SKU rows
+      matchId = existing.filter((r) => r.sku == null && !usedIds.has(r.id))[0]?.id;
     }
 
-    const incomingSkus = new Set(snap.items.map((i) => i.sku).filter((s): s is string => s != null));
-
-    // Update or insert each incoming item
-    for (const it of snap.items) {
-      const existing = it.sku != null ? existingBySku.get(it.sku) : undefined;
-      if (existing) {
-        const { error: uErr } = await c.from("order_items").update({
-          product_name: it.productName,
-          qty: it.qty,
-          unit_cost_cents: it.unitCostCents,
-          line_total_cents: it.unitCostCents * it.qty,
-          release_date: it.releaseDate,
-        }).eq("id", existing.id);
-        if (uErr) throw new Error(`order_items update failed: ${uErr.message}`);
-      } else {
-        const { error: iErr } = await c.from("order_items").insert({
-          order_id: order.id,
-          sku: it.sku,
-          product_name: it.productName,
-          qty: it.qty,
-          unit_cost_cents: it.unitCostCents,
-          line_total_cents: it.unitCostCents * it.qty,
-          release_date: it.releaseDate,
-          status: null,
-        });
-        if (iErr) throw new Error(`order_items insert failed: ${iErr.message}`);
-      }
+    if (matchId) {
+      usedIds.add(matchId);
+      const { error: uErr } = await c.from("order_items").update({
+        product_name: it.productName,
+        qty: it.qty,
+        unit_cost_cents: it.unitCostCents,
+        line_total_cents: it.unitCostCents * it.qty,
+        release_date: it.releaseDate,
+      }).eq("id", matchId);
+      if (uErr) throw new Error(`order_items update failed: ${uErr.message}`);
+    } else {
+      const { error: iErr } = await c.from("order_items").insert({
+        order_id: order.id,
+        sku: it.sku,
+        product_name: it.productName,
+        qty: it.qty,
+        unit_cost_cents: it.unitCostCents,
+        line_total_cents: it.unitCostCents * it.qty,
+        release_date: it.releaseDate,
+        status: null,
+      });
+      if (iErr) throw new Error(`order_items insert failed: ${iErr.message}`);
     }
+  }
 
-    // Delete items that are no longer in the snapshot
-    for (const [sku, row] of existingBySku) {
-      if (!incomingSkus.has(sku)) {
-        await c.from("order_items").delete().eq("id", row.id);
-      }
+  // Delete items no longer in the snapshot (covers both SKU and null-SKU rows).
+  for (const row of existing) {
+    if (!usedIds.has(row.id)) {
+      const { error: dErr } = await c.from("order_items").delete().eq("id", row.id);
+      if (dErr) throw new Error(`order_items delete failed: ${dErr.message}`);
     }
   }
 
@@ -122,14 +129,15 @@ async function upsertOneOrder(
     const matched = (existing ?? [])[0];
 
     if (matched) {
-      await c.from("order_payments").update({
+      const { error: pUpdErr } = await c.from("order_payments").update({
         expected_cents: p.expectedCents,
         actual_date: p.actualDate,
         actual_cents: p.actualCents,
         source: "scraped",
       }).eq("id", matched.id);
+      if (pUpdErr) throw new Error(`order_payments update failed: ${pUpdErr.message}`);
     } else {
-      await c.from("order_payments").insert({
+      const { error: pInsErr } = await c.from("order_payments").insert({
         order_id: order.id,
         kind: p.kind,
         expected_date: p.expectedDate,
@@ -138,6 +146,7 @@ async function upsertOneOrder(
         actual_cents: p.actualCents,
         source: "scraped",
       });
+      if (pInsErr) throw new Error(`order_payments insert failed: ${pInsErr.message}`);
     }
   }
 
