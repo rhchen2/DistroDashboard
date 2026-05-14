@@ -1301,7 +1301,7 @@ Deno.test("checkScraperToken rejects missing header", () => {
 
 - [ ] **Step 4: Run Deno test**
 
-Run: `deno test --allow-all supabase/functions/ingest/tests/auth.test.ts`
+Run: `deno test --allow-all --config supabase/functions/ingest/deno.json supabase/functions/ingest/tests/auth.test.ts`
 Expected: 4 passed.
 
 - [ ] **Step 5: Commit**
@@ -1383,7 +1383,7 @@ Deno.test("respects cancelled regardless of other fields", () => {
 
 - [ ] **Step 2: Run tests → fail**
 
-Run: `deno test --allow-all supabase/functions/ingest/tests/statusHeadline.test.ts`
+Run: `deno test --allow-all --config supabase/functions/ingest/deno.json supabase/functions/ingest/tests/statusHeadline.test.ts`
 Expected: FAIL — module does not exist.
 
 - [ ] **Step 3: Implement `lib/statusHeadline.ts`**
@@ -1418,7 +1418,7 @@ export function recomputeHeadline(snap: OrderSnapshot): OrderStatus {
 
 - [ ] **Step 4: Run tests → pass**
 
-Run: `deno test --allow-all supabase/functions/ingest/tests/statusHeadline.test.ts`
+Run: `deno test --allow-all --config supabase/functions/ingest/deno.json supabase/functions/ingest/tests/statusHeadline.test.ts`
 Expected: 4 passed.
 
 - [ ] **Step 5: Commit**
